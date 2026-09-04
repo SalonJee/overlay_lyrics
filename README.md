@@ -48,3 +48,15 @@ You can also set up keyboard shortcuts so you never have to click at all:
 * **"Waiting for music..." is stuck:** You must **refresh your YouTube tab** (`Ctrl+R`) after installing or updating the extension, so the tracking script can load.
 * **Nothing happens when I click:** Chrome/Brave **forbids** extensions from injecting into system pages (`chrome://`, `brave://`, the Web Store, empty New Tab). You must be on a regular website.
 * **Lyrics not found:** On regular YouTube, the extension parses the video title (e.g. "Artist - Title"). Odd titles may not match. YouTube Music works perfectly since it has structured metadata.
+
+# How it feels to use 
+
+### Horizontal Subtitles Style
+
+![Horizontal Subtitles Style](images/Screenshot%20from%202026-09-04%2016-35-59.png)
+
+### Floating Lyrics Style
+
+![Floating Lyrics Style](images/Screenshot%20from%202026-09-04%2016-37-27.png)
+
+

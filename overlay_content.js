@@ -39,13 +39,16 @@
         overflow: hidden;
         cursor: default;
         user-select: none;
-        transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+        resize: both; /* Native resize handle */
+        min-width: 200px;
+        min-height: 200px;
       }
 
       /* ── Horizontal bar layout ── */
       .panel.horizontal {
-        width: 500px; height: auto; min-height: 80px;
+        width: 500px !important; height: auto !important; min-height: 80px;
         border-radius: 14px;
+        resize: none; /* Disable resize in horizontal mode */
       }
       .panel.horizontal .lyrics {
         flex: 1; overflow: hidden; padding: 0 20px 14px;
@@ -242,19 +245,24 @@
 
   document.body.appendChild(host);
 
-  // ── Drag logic ───────────────────────────────────────────────────────────────
+  // ── Drag & Resize logic ────────────────────────────────────────────────────
   const panel = shadow.getElementById('panel');
-  const handle = shadow.getElementById('drag-handle');
   let dragging = false, ox = 0, oy = 0;
   
   const abortCtrl = new AbortController();
 
-  handle.addEventListener('mousedown', e => {
-    if (e.target.closest('button')) return; // don't drag if clicking a button
+  panel.addEventListener('mousedown', e => {
+    // Don't drag if clicking buttons, inputs, or sliders
+    if (e.target.closest('button, input')) return;
+    
+    // Don't drag if clicking the bottom-right corner (native resize handle)
+    const r = panel.getBoundingClientRect();
+    if (e.clientX > r.right - 25 && e.clientY > r.bottom - 25 && !panel.classList.contains('horizontal')) return;
+
     dragging = true;
-    const r = host.getBoundingClientRect();
-    ox = e.clientX - r.left;
-    oy = e.clientY - r.top;
+    const hr = host.getBoundingClientRect();
+    ox = e.clientX - hr.left;
+    oy = e.clientY - hr.top;
     host.style.right = 'auto';
   });
   document.addEventListener('mousemove', e => {
@@ -262,7 +270,14 @@
     host.style.left = (e.clientX - ox) + 'px';
     host.style.top  = (e.clientY - oy) + 'px';
   }, { signal: abortCtrl.signal });
-  document.addEventListener('mouseup', () => { dragging = false; }, { signal: abortCtrl.signal });
+  document.addEventListener('mouseup', () => { 
+    dragging = false; 
+    if (!isHorizontal) {
+       lastVertTop = host.style.top;
+       lastVertLeft = host.style.left;
+       lastVertRight = host.style.right;
+    }
+  }, { signal: abortCtrl.signal });
 
   shadow.getElementById('close-btn').addEventListener('click', () => {
     host.style.display = 'none';
