@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Lyrics Overlay",
+  "version": "2.0",
+  "description": "Spotify-style floating lyrics for YouTube and YouTube Music.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://lrclib.net/*",
+    "*://music.youtube.com/*",
+    "*://www.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://music.youtube.com/*", "*://www.youtube.com/watch*"],
+      "js": ["youtube_content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Lyrics Overlay"
+  },
+  "commands": {
+    "toggle-lyrics": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Toggle lyrics overlay on active tab"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      width: 200px;
+      background: #111;
+      color: #fff;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      opacity: 0.8;
+      text-align: center;
+    }
+    button {
+      background: #1ed760;
+      color: #000;
+      border: none;
+      padding: 11px 0;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      letter-spacing: 0.2px;
+    }
+    button:hover { background: #1fef6a; }
+  </style>
+</head>
+<body>
+  <div class="label">🎵 Lyrics Overlay</div>
+  <button id="btn">Toggle Lyrics</button>
+  <script src="popup.js"></script>
+</body>
+</html>
