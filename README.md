@@ -6,6 +6,7 @@ A Manifest V3 Chromium extension that fetches synced lyrics for whatever you are
 * **Zero Backend:** Runs entirely locally using the open `lrclib.net` API.
 * **Universal Overlay:** Play music in the background on YouTube, and open the lyrics overlay on whatever tab you're currently browsing (Reddit, GitHub, etc).
 * **Spotify-style Aesthetics:** Smooth scrolling, blurred backgrounds, and bold active-line highlighting.
+* **Dual Layouts:** Switch instantly between the classic vertical floating window and a compact horizontal subtitle bar!
 * **Dynamic Injection:** Keeps your browser fast by only injecting the UI when you explicitly toggle it.
 
 ---
@@ -30,14 +31,15 @@ Since this is a custom local extension, you need to load it manually into Chrome
 
 ---
 
-## ⌨️ Optional: Keyboard Shortcut
+## ⌨️ Optional: Keyboard Shortcuts
 
-You can also set up a keyboard shortcut so you never have to click at all:
+You can also set up keyboard shortcuts so you never have to click at all:
 
 1. Go to **`chrome://extensions/shortcuts`** (or **`brave://extensions/shortcuts`**).
 2. Scroll down to **"Lyrics Overlay"**.
-3. Next to **"Toggle lyrics overlay on active tab"**, click the pencil icon ✏️ and press your desired key combo (e.g., `Ctrl+Shift+L`).
-4. Done! Now that shortcut will show/hide the lyrics instantly.
+3. Next to **"Toggle lyrics overlay on active tab"**, click the pencil icon ✏️ and press your desired key combo (e.g., `Ctrl+Shift+L` to open/close the app).
+4. Next to **"Toggle horizontal/vertical layout"**, click the pencil icon ✏️ and press a combo like `Alt+L` (this instantly transforms the window shape).
+5. Done! Now those shortcuts will give you full control instantly.
 
 ---
 
