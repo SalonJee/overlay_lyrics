@@ -34,16 +34,30 @@ function writeState(video) {
       title,
       artist,
       currentTime: video.currentTime,
-      duration: video.duration || 0
+      duration: video.duration || 0,
+      isPlaying: !video.paused
     }
   });
 }
 
-// Listen for seek commands from the overlay
+// Listen for seek + pause commands from the overlay
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.seekTo && lastVideo) {
+  if (changes.seekTo && changes.seekTo.newValue !== undefined && lastVideo) {
     lastVideo.currentTime = changes.seekTo.newValue;
     chrome.storage.local.remove('seekTo');
+  }
+  if (changes.togglePause && changes.togglePause.newValue !== undefined && lastVideo) {
+    if (lastVideo.paused) lastVideo.play();
+    else lastVideo.pause();
+    chrome.storage.local.remove('togglePause');
+  }
+  if (changes.explicitPause && changes.explicitPause.newValue !== undefined && lastVideo) {
+    lastVideo.pause();
+    chrome.storage.local.remove('explicitPause');
+  }
+  if (changes.explicitPlay && changes.explicitPlay.newValue !== undefined && lastVideo) {
+    lastVideo.play();
+    chrome.storage.local.remove('explicitPlay');
   }
 });
 

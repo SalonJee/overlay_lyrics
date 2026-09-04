@@ -47,6 +47,17 @@ chrome.commands.onCommand.addListener(async (command) => {
         files: ['overlay_content.js']
       }).catch(err => console.error("Could not inject:", err));
     }
+  } else if (command === 'toggle-layout') {
+    // We send a message to the active tab to toggle the layout directly
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_LAYOUT' }).catch(() => {
+        // If the overlay isn't open yet, we can toggle it in storage instead
+        chrome.storage.local.get('overlayLayout', ({ overlayLayout }) => {
+          chrome.storage.local.set({ overlayLayout: overlayLayout === 'horizontal' ? 'vertical' : 'horizontal' });
+        });
+      });
+    }
   }
 });
 
