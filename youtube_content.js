@@ -1,4 +1,4 @@
-// youtube_content.js — robust polling approach (handles YouTube SPA navigation)
+// youtube_content.js — robust polling + seek support
 
 let lastVideo = null;
 let lastWrite = 0;
@@ -25,20 +25,32 @@ function getMeta() {
 
 function writeState(video) {
   const now = Date.now();
-  if (now - lastWrite < 400) return; // throttle to ~2.5Hz
+  if (now - lastWrite < 400) return;
   lastWrite = now;
   const { title, artist } = getMeta();
   if (!title) return;
   chrome.storage.local.set({
-    nowPlaying: { title, artist, currentTime: video.currentTime }
+    nowPlaying: {
+      title,
+      artist,
+      currentTime: video.currentTime,
+      duration: video.duration || 0
+    }
   });
 }
 
-// Poll every 1s: always grab the current <video> and re-attach if it changed
+// Listen for seek commands from the overlay
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.seekTo && lastVideo) {
+    lastVideo.currentTime = changes.seekTo.newValue;
+    chrome.storage.local.remove('seekTo');
+  }
+});
+
+// Poll every 1s: grab the current <video> and re-attach if it changed
 setInterval(() => {
   const video = document.querySelector('video');
   if (!video) { lastVideo = null; return; }
-
   if (video !== lastVideo) {
     lastVideo = video;
     video.addEventListener('timeupdate', () => writeState(video));

@@ -121,6 +121,59 @@
         height: 100%; color: rgba(255,255,255,0.3);
         font-size: 13px; text-align: center; padding: 20px;
       }
+
+      /* ─── Progress slider ────────── */
+      .progress {
+        padding: 0 16px 14px;
+        flex-shrink: 0;
+        border-top: 1px solid rgba(255,255,255,0.07);
+      }
+      .slider-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 10px;
+      }
+      .time {
+        font-size: 10px;
+        color: rgba(255,255,255,0.4);
+        min-width: 32px;
+        font-variant-numeric: tabular-nums;
+      }
+      .time.right { text-align: right; }
+      input[type=range] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 1;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255,255,255,0.15);
+        outline: none;
+        cursor: pointer;
+        margin: 0;
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 6px rgba(0,0,0,0.4);
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      input[type=range]::-webkit-slider-thumb:hover {
+        transform: scale(1.3);
+      }
+      input[type=range]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        border: none;
+        cursor: pointer;
+      }
     </style>
 
     <div class="panel" id="panel">
@@ -133,6 +186,13 @@
       </div>
       <div class="lyrics" id="lyrics">
         <div class="empty">Play something on YouTube or YouTube Music.</div>
+      </div>
+      <div class="progress">
+        <div class="slider-row">
+          <span class="time" id="time-cur">0:00</span>
+          <input type="range" id="slider" min="0" max="100" value="0" step="0.1">
+          <span class="time right" id="time-dur">0:00</span>
+        </div>
       </div>
     </div>
   `;
@@ -166,10 +226,29 @@
   let currentSong = '';
   let lines = [];
   let activeIdx = -1;
+  let isSeeking = false;
 
-  const lyricsEl = shadow.getElementById('lyrics');
-  const titleEl  = shadow.getElementById('title');
-  const artistEl = shadow.getElementById('artist');
+  const lyricsEl  = shadow.getElementById('lyrics');
+  const titleEl   = shadow.getElementById('title');
+  const artistEl  = shadow.getElementById('artist');
+  const sliderEl  = shadow.getElementById('slider');
+  const timeCurEl = shadow.getElementById('time-cur');
+  const timeDurEl = shadow.getElementById('time-dur');
+
+  function formatTime(s) {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  // Slider seek logic
+  sliderEl.addEventListener('input', () => { isSeeking = true; });
+  sliderEl.addEventListener('change', () => {
+    const seekTime = parseFloat(sliderEl.value);
+    chrome.storage.local.set({ seekTo: seekTime });
+    isSeeking = false;
+  });
 
   function renderLines() {
     lyricsEl.innerHTML = '';
@@ -203,7 +282,15 @@
     chrome.storage.local.get('nowPlaying', ({ nowPlaying }) => {
       if (!nowPlaying || !nowPlaying.title) return;
 
-      const { title, artist, currentTime } = nowPlaying;
+      const { title, artist, currentTime, duration } = nowPlaying;
+
+      // Update slider
+      if (!isSeeking && duration) {
+        sliderEl.max = duration;
+        sliderEl.value = currentTime;
+      }
+      timeCurEl.textContent = formatTime(currentTime);
+      timeDurEl.textContent = formatTime(duration);
       const songKey = `${title}|||${artist}`;
 
       titleEl.textContent  = title  || 'Unknown';
