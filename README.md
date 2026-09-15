@@ -28,7 +28,9 @@ Since this is a custom local extension, you need to load it manually into Chrome
 1. **Start the Music:** Open a tab with [YouTube Music](https://music.youtube.com) or a regular [YouTube](https://youtube.com) video.
 2. **Go Anywhere:** Navigate to any normal webpage or stay on the YouTube tab.
 3. **Toggle the Lyrics:** Simply **click the Lyrics Overlay icon** in your toolbar. The lyrics panel will appear (or disappear if it's already showing). That's it — one click!
-
+4. Press the keys (ctrl + shift + L ) for lyrics .
+5. Press (Alt + L ) for vertical /horizontal subtitle style lyrics .
+(if that doesnt work, read below )
 ---
 
 ## ⌨️ Optional: Keyboard Shortcuts
@@ -40,7 +42,7 @@ You can also set up keyboard shortcuts so you never have to click at all:
 3. Next to **"Toggle lyrics overlay on active tab"**, click the pencil icon ✏️ and press your desired key combo (e.g., `Ctrl+Shift+L` to open/close the app).
 4. Next to **"Toggle horizontal/vertical layout"**, click the pencil icon ✏️ and press a combo like `Alt+L` (this instantly transforms the window shape).
 5. Done! Now those shortcuts will give you full control instantly.
-
+ 
 ---
 
 ## ⚠️ Troubleshooting
