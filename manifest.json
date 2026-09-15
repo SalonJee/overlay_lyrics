@@ -10,7 +10,9 @@
     "*://www.youtube.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -34,18 +36,19 @@
   },
   "commands": {
     "toggle-lyrics": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+L",
-        "mac": "Command+Shift+L"
-      },
+      "suggested_key": { "default": "Ctrl+Shift+L", "mac": "Command+Shift+L" },
       "description": "Toggle lyrics overlay on active tab"
     },
     "toggle-layout": {
-      "suggested_key": {
-        "default": "Alt+L",
-        "mac": "Alt+L"
-      },
+      "suggested_key": { "default": "Alt+L", "mac": "Alt+L" },
       "description": "Toggle horizontal/vertical layout"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "lyrics-overlay@yourdomain.com",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": { "required": ["none"] }
     }
   }
 }
