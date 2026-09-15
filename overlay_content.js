@@ -107,6 +107,14 @@
         transition: background 0.2s, color 0.2s;
       }
       .icon-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+      .icon-btn.spinning {
+        animation: __lyrics_spin 0.8s linear infinite;
+        pointer-events: none;
+      }
+      @keyframes __lyrics_spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
 
       /* ─── Lyrics scroll area ─────── */
       .lyrics {
@@ -223,6 +231,7 @@
           <div class="artist" id="artist"></div>
         </div>
         <div class="header-btns">
+          <button class="icon-btn" id="reload-btn" title="Reload lyrics (resync)">⟳</button>
           <button class="icon-btn" id="layout-btn" title="Toggle subtitle layout (Ctrl+Shift+M)">⊟</button>
           <button class="icon-btn" id="close-btn" title="Close">✕</button>
         </div>
@@ -248,13 +257,13 @@
   // ── Drag & Resize logic ────────────────────────────────────────────────────
   const panel = shadow.getElementById('panel');
   let dragging = false, ox = 0, oy = 0;
-  
+
   const abortCtrl = new AbortController();
 
   panel.addEventListener('mousedown', e => {
     // Don't drag if clicking buttons, inputs, or sliders
     if (e.target.closest('button, input')) return;
-    
+
     // Don't drag if clicking the bottom-right corner (native resize handle)
     const r = panel.getBoundingClientRect();
     if (e.clientX > r.right - 25 && e.clientY > r.bottom - 25 && !panel.classList.contains('horizontal')) return;
@@ -268,19 +277,67 @@
   document.addEventListener('mousemove', e => {
     if (!dragging) return;
     host.style.left = (e.clientX - ox) + 'px';
-    host.style.top  = (e.clientY - oy) + 'px';
+    host.style.top = (e.clientY - oy) + 'px';
   }, { signal: abortCtrl.signal });
-  document.addEventListener('mouseup', () => { 
-    dragging = false; 
+  document.addEventListener('mouseup', () => {
+    dragging = false;
     if (!isHorizontal) {
-       lastVertTop = host.style.top;
-       lastVertLeft = host.style.left;
-       lastVertRight = host.style.right;
+      lastVertTop = host.style.top;
+      lastVertLeft = host.style.left;
+      lastVertRight = host.style.right;
     }
   }, { signal: abortCtrl.signal });
 
   shadow.getElementById('close-btn').addEventListener('click', () => {
     host.style.display = 'none';
+  });
+
+  // ── Reload / resync lyrics ───────────────────────────────────────────────────
+  const reloadBtn = shadow.getElementById('reload-btn');
+  reloadBtn.addEventListener('click', () => {
+    reloadBtn.classList.add('spinning');
+
+    // Force the next check to treat this as a "new" song so lyrics are re-fetched,
+    // even if the title/artist haven't actually changed.
+    currentSong = '';
+    activeIdx = -1;
+    lines = [];
+    lyricsEl.innerHTML = '<div class="empty">Fetching lyrics…</div>';
+
+    function readAndRefetch() {
+      chrome.storage.local.get('nowPlaying', ({ nowPlaying }) => {
+        if (!nowPlaying || !nowPlaying.title) {
+          lyricsEl.innerHTML = '<div class="empty">Play something on YouTube or YouTube Music.</div>';
+          reloadBtn.classList.remove('spinning');
+          return;
+        }
+
+        const { title, artist } = nowPlaying;
+        currentSong = `${title}|||${artist}`;
+        titleEl.textContent = title || 'Unknown';
+        artistEl.textContent = artist || '';
+
+        chrome.runtime.sendMessage({ type: 'GET_LYRICS', title, artist }, res => {
+          lines = res?.lines || [];
+          renderLines();
+          reloadBtn.classList.remove('spinning');
+        });
+      });
+    }
+
+    // Ask the background script / page tracker to force a fresh read of the
+    // currently playing song — the same thing that (probably) happens when the
+    // overlay is closed and reopened via the toolbar icon or shortcut. If there's
+    // no handler for this message yet, it's a harmless no-op and we fall back to
+    // just re-reading whatever is already in storage.
+    try {
+      chrome.runtime.sendMessage({ type: 'FORCE_RESYNC' }, () => {
+        void chrome.runtime.lastError; // swallow "no receiver" if unhandled
+        setTimeout(readAndRefetch, 200); // give a handler a moment to write fresh data
+      });
+    } catch (e) {
+      readAndRefetch();
+    }
   });
 
   // ── Layout toggle ────────────────────────────────────────────────────────────
@@ -295,7 +352,7 @@
     isHorizontal = horiz;
     layoutBtn.textContent = horiz ? '☰' : '⊟';
     layoutBtn.title = horiz ? 'Switch to vertical layout' : 'Switch to horizontal subtitle layout';
-    
+
     if (horiz) {
       // Save current vertical position before switching
       if (!panel.classList.contains('horizontal')) {
@@ -334,15 +391,15 @@
   let isSeeking = false;
   let wasPlayingBeforeSeek = false;
 
-  const lyricsEl   = shadow.getElementById('lyrics');
-  const titleEl    = shadow.getElementById('title');
-  const artistEl   = shadow.getElementById('artist');
-  const sliderEl   = shadow.getElementById('slider');
-  const timeCurEl  = shadow.getElementById('time-cur');
-  const timeDurEl  = shadow.getElementById('time-dur');
+  const lyricsEl = shadow.getElementById('lyrics');
+  const titleEl = shadow.getElementById('title');
+  const artistEl = shadow.getElementById('artist');
+  const sliderEl = shadow.getElementById('slider');
+  const timeCurEl = shadow.getElementById('time-cur');
+  const timeDurEl = shadow.getElementById('time-dur');
   const playPauseEl = shadow.getElementById('play-pause');
 
-  const playIcon  = '<svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>';
+  const playIcon = '<svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>';
   const pauseIcon = '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="4" height="16"/><rect x="15" y="4" width="4" height="16"/></svg>';
 
   function formatTime(s) {
@@ -353,7 +410,7 @@
   }
 
   // Slider seek logic
-  sliderEl.addEventListener('input', () => { 
+  sliderEl.addEventListener('input', () => {
     if (!isSeeking) {
       isSeeking = true;
       chrome.storage.local.get('nowPlaying', ({ nowPlaying }) => {
@@ -371,7 +428,7 @@
     const seekTime = parseFloat(sliderEl.value);
     chrome.storage.local.set({ seekTo: seekTime });
     isSeeking = false;
-    
+
     if (wasPlayingBeforeSeek) {
       chrome.storage.local.set({ explicitPlay: Date.now() });
       wasPlayingBeforeSeek = false;
@@ -429,7 +486,7 @@
         playPauseEl.innerHTML = isPlaying ? pauseIcon : playIcon;
         const songKey = `${title}|||${artist}`;
 
-        titleEl.textContent  = title  || 'Unknown';
+        titleEl.textContent = title || 'Unknown';
         artistEl.textContent = artist || '';
 
         if (songKey !== currentSong) {

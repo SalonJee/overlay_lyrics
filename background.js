@@ -31,9 +31,23 @@ async function fetchLyrics(title, artist) {
   }
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'GET_LYRICS') {
     fetchLyrics(msg.title, msg.artist).then(lines => sendResponse({ lines }));
+    return true; // keep channel open for async
+  }
+
+  if (msg.type === 'FORCE_RESYNC') {
+    // Forward to youtube_content.js running in the SAME tab as the overlay
+    // that asked for it, so we never resync the wrong tab's song.
+    const tabId = sender.tab?.id;
+    if (tabId == null) {
+      sendResponse({ ok: false, reason: 'no-tab' });
+      return false;
+    }
+    chrome.tabs.sendMessage(tabId, { type: 'FORCE_RESYNC' })
+      .then(res => sendResponse(res))
+      .catch(() => sendResponse({ ok: false, reason: 'no-tracker' }));
     return true; // keep channel open for async
   }
 });

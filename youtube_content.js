@@ -2,11 +2,12 @@
 
 let lastVideo = null;
 let lastWrite = 0;
+let lastMetaKey = '';
 
 function getMeta() {
   if (location.hostname === 'music.youtube.com') {
     return {
-      title:  document.querySelector('.title.ytmusic-player-bar')?.textContent?.trim() || '',
+      title: document.querySelector('.title.ytmusic-player-bar')?.textContent?.trim() || '',
       artist: document.querySelector('.byline.ytmusic-player-bar a')?.textContent?.trim() || ''
     };
   }
@@ -18,17 +19,21 @@ function getMeta() {
 
   const m = heading.match(/^(.+?)\s*[-–—]\s*(.+)$/);
   return {
-    title:  m ? m[2].trim() : heading,
+    title: m ? m[2].trim() : heading,
     artist: m ? m[1].trim() : (document.querySelector('#channel-name #text a')?.textContent?.trim() || '')
   };
 }
 
-function writeState(video) {
+// `force` bypasses the 400ms write throttle — used when we already know the
+// song changed (poll-detected) or a manual resync was requested, so we don't
+// end up waiting on the throttle window before the correct data goes out.
+function writeState(video, force = false) {
   const now = Date.now();
-  if (now - lastWrite < 400) return;
+  if (!force && now - lastWrite < 400) return;
   lastWrite = now;
   const { title, artist } = getMeta();
   if (!title) return;
+  lastMetaKey = `${title}|||${artist}`;
   chrome.storage.local.set({
     nowPlaying: {
       title,
@@ -61,12 +66,41 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-// Poll every 1s: grab the current <video> and re-attach if it changed
+// Force an immediate resync on request (e.g. the overlay's reload button).
+// This is the real equivalent of "close + reopen": it re-reads the page's
+// current title/artist right now instead of waiting for the next timeupdate.
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'FORCE_RESYNC') {
+    const video = lastVideo || document.querySelector('video');
+    if (video) {
+      lastVideo = video;
+      writeState(video, true);
+      sendResponse({ ok: true });
+    } else {
+      sendResponse({ ok: false, reason: 'no-video' });
+    }
+    return false; // handled synchronously
+  }
+});
+
+// Poll every 1s: grab the current <video> and re-attach if it changed.
+// Also compare the on-page title/artist every tick and write immediately if
+// it changed — this is what actually catches track changes reliably, since
+// `timeupdate` can stall or lag during a transition between songs.
 setInterval(() => {
   const video = document.querySelector('video');
   if (!video) { lastVideo = null; return; }
+
   if (video !== lastVideo) {
     lastVideo = video;
     video.addEventListener('timeupdate', () => writeState(video));
+  }
+
+  const { title, artist } = getMeta();
+  if (title) {
+    const metaKey = `${title}|||${artist}`;
+    if (metaKey !== lastMetaKey) {
+      writeState(video, true); // song actually changed — resync now, no throttle
+    }
   }
 }, 1000);
